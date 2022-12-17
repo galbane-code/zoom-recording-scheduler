@@ -28,8 +28,10 @@ def create_python_task_bat(python_exe_path, specific_exe_path, python_exe_param,
                                                                         python_exe_second_param=python_exe_second_param))
     return cwd + "\\" + file_name
 
-def fetch(entries):
-    dict_fields_values = {entry[0]: entry[1].get() for i,entry in enumerate(entries)}
+def fetch():
+    entries_without_last  = entries.copy()
+    entries_without_last.pop(0)
+    dict_fields_values = {entry[0]: entry[1].get() for i,entry in enumerate(entries_without_last)}
     dict_days_to_days_command = {days_list[i]: days_in_command[i] for i in range(len(days_list))}
     zoom_hour = datetime.strptime(dict_fields_values["Zoom Start Hour"],"%H:%M") + timedelta(minutes=2)
     dict_fields_values["Day"] = dict_days_to_days_command[dict_fields_values["Day"]]
@@ -96,7 +98,7 @@ row = tk.Frame(root)
 row.pack(side=tk.TOP, fill=tk.X, padx=8, pady=5)
 
 b1 = tk.Button(row, text='Start',
-                command=(lambda e=entries: fetch(e)))
+                command=(lambda e=entries: fetch()))
 b1.pack(side=tk.LEFT, padx=0, pady=0)
 
 b3 = tk.Button(row, text='Add',  command=(lambda e=entries: add_form_entries(root)))
@@ -109,5 +111,5 @@ btn_ent.pack(side=tk.RIGHT)
 
 entries.append(row)
 makeform(root, fields)
-root.bind('<Return>', (lambda event, e=entries: fetch(e)))   
+root.bind('<Return>')
 root.mainloop()
