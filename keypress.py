@@ -3,8 +3,8 @@ import time
 import os
 import sys
 
-def create_task(type: str, name: str, exe_path: str, day: str, hour: str):
-    task_str= (r'SchTasks /Create /SC {type} /TN "{name}" /TR "{exe_path}" /ST {hour}').format(type=type, name=name, exe_path=exe_path, day=day,hour=hour)
+def create_task(type: str, name: str, exe_path: str, hour: str):
+    task_str= (r'SchTasks /Create /SC {type} /TN "{name}" /TR "{exe_path}" /ST {hour}').format(type=type, name=name, exe_path=exe_path,hour=hour)
     res = os.system(task_str)
     print(res)
 

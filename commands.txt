@@ -1,0 +1,6 @@
+C:\Users\Gal\AppData\Local\Programs\Python\Python311\python.exe
+https://us05web.zoom.us/j/85463067636?pwd=amRnSk9aWEQ4OEVsV3duNXNla2xMUT09
+C:\Program Files\TechSmith\Snagit 2020\Snagit32.exe
+F8
+SHIFT,F9
+SHIFT,F10
