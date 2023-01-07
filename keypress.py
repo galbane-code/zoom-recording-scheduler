@@ -10,7 +10,10 @@ def create_task(type: str, name: str, exe_path: str, hour: str):
 
 def key_press(key: str):
     time.sleep(2)
-    pyautogui.press(key)
+    if key == "click":
+        pyautogui.click()
+    else:
+        pyautogui.press(key)
     
 def press_multiple_keys(keys: list[str]):
     time.sleep(2)
@@ -25,3 +28,5 @@ if len(params) > 1:
     elif type_key == "multiple keys":
         keys_press_input = params[2].split(",")
         press_multiple_keys(keys_press_input)
+        
+        

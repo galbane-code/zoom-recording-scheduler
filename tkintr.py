@@ -3,62 +3,68 @@ from datetime import datetime, timedelta
 import os
 from keypress import create_task
 import uuid
+import json
 
 input_keys = {True: "one key", False: "multiple keys"}
-fields = 'Python Path','Zoom Link', "Zoom Start Hour",'Recording Path'
+fields = 'Zoom Link', "Zoom Start Hour"
 now = datetime.now()
 cwd = os.getcwd()
-days_list = ['sunday','monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-days_in_command = ['SUN','MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 entries = []
 btn_entries_name_to_time = {}
 btn_entries_name_to_entry = {}
+config_data = {}
+with open("config.json") as json_file:
+    config_data = json.load(json_file)
+    
 
-def create_python_task_bat(python_exe_path, specific_exe_path, python_exe_param, python_exe_second_param = None, btn_name=""):
-    file_name = specific_exe_path.replace(".py","") + btn_name  + "_.bat"
+record_program_path = config_data["record_program_path"]
+
+def create_python_task_bat(specific_exe_path, python_exe_param,
+                           python_exe_second_param = None, btn_name=""):
+
+    file_name = specific_exe_path.replace(".py","") + btn_name  + ".bat"
     with open(file_name, "w+") as f:
         if  python_exe_second_param == None:
-            f.write('@echo off!\n"{python_exe_path}" "{exe}" "{python_exe_param}"\npause'.format(python_exe_path=python_exe_path,
+            f.write('@echo off!\npython "{exe}" "{python_exe_param}"\nexit'.format(
                                                                         exe=cwd + "\\" + specific_exe_path,
                                                                         python_exe_param= python_exe_param))
         else:
-            f.write('@echo off!\n"{python_exe_path}" "{exe}" "{python_exe_param}" "{python_exe_second_param}"\npause'.format(python_exe_path=python_exe_path,
+            f.write('@echo off!\npython "{exe}" "{python_exe_param}" "{python_exe_second_param}"\nexit'.format(
                                                                         exe=cwd + "\\" + specific_exe_path,
                                                                         python_exe_param= python_exe_param,
                                                                         python_exe_second_param=python_exe_second_param))
-    return cwd + "\\" + file_name
+    return cwd + "\\" +  file_name
 
 def fetch():
     entries_without_last  = entries.copy()
     entries_without_last.pop(0)
-    dict_fields_values = {entry[0]: entry[1].get() for i,entry in enumerate(entries_without_last)}
-    dict_days_to_days_command = {days_list[i]: days_in_command[i] for i in range(len(days_list))}
-    zoom_hour = datetime.strptime(dict_fields_values["Zoom Start Hour"],"%H:%M") + timedelta(minutes=2)
-    dict_fields_values["Day"] = dict_days_to_days_command[dict_fields_values["Day"]]
-    
-
+    dict_fields_values = {}
+    for entry in entries_without_last:
+        dict_fields_values[entry[0]] = entry[1].get()
+    zoom_hour = datetime.strptime(dict_fields_values["Zoom Start Hour"],"%H:%M") + timedelta(minutes=1)
     myuuid = uuid.uuid4()
+    
     """ 
     create a task for the recording program to start
     """
-    create_task("ONCE", "record_temp_task_" + myuuid.hex, dict_fields_values["Recording Path"], dict_fields_values["Day"],zoom_hour.strftime('%H:%M'))
+    create_task("ONCE", "record_temp_task_" + myuuid.hex, record_program_path,dict_fields_values["Zoom Start Hour"])
     """ 
     create a task for the zoom link to launch to start
     """
-    zoom_link_bat = create_python_task_bat(dict_fields_values["Python Path"], "link.py", dict_fields_values["Zoom Link"])
-    create_task("ONCE", "zoom_temp_task" + myuuid.hex, zoom_link_bat, dict_fields_values["Day"], dict_fields_values["Zoom Start Hour"])
+    zoom_link_bat = create_python_task_bat("link.py", dict_fields_values["Zoom Link"])
+    create_task("ONCE", "zoom_temp_task" + myuuid.hex, zoom_link_bat, zoom_hour.strftime('%H:%M'))
 
     """ 
     create a task for the recording btn's
     """
-    for btn_entry_name in btn_entries_name_to_entry.key():
-        bat_name = create_btn_tasks_bat(btn_entry_name, btn_entries_name_to_entry[btn_entry_name].get(), dict_fields_values["Python Path"])
-        create_task("ONCE", btn_entry_name + myuuid.hex, bat_name, btn_entries_name_to_time[btn_entry_name])
+    for btn_entry_name in btn_entries_name_to_entry.keys():
+        bat_name = create_btn_tasks_bat(btn_entry_name, btn_entries_name_to_entry[btn_entry_name].get())
+        create_task("ONCE", btn_entry_name + myuuid.hex, bat_name, btn_entries_name_to_time[btn_entry_name].get())
     
 
-def create_btn_tasks_bat(btn_name, btn_to_push, python_path):
+def create_btn_tasks_bat(btn_name, btn_to_push):
     is_single_btn = ',' not in btn_to_push
-    current_btn_bat = create_python_task_bat(python_path, "keypress.py", 
+    current_btn_bat = create_python_task_bat("keypress.py", 
                                                 input_keys[is_single_btn], btn_to_push, btn_name)
     return current_btn_bat
 
@@ -72,7 +78,7 @@ def add_form_entries(root):
     row.pack(side=tk.TOP, fill=tk.X, padx=8, pady=5)
     lab.pack(side=tk.LEFT)
     ent.pack(side=tk.RIGHT, expand=tk.YES, fill=tk.X)
-    entries.append(ent)
+    entries.append((btn_name + "btn",ent))
     btn_entries_name_to_entry[btn_name] = ent
     row = tk.Frame(root)
     lab = tk.Label(row, width=25, text=btn_name +  " time of execution", anchor='w')
@@ -80,7 +86,7 @@ def add_form_entries(root):
     row.pack(side=tk.TOP, fill=tk.X, padx=8, pady=5)
     lab.pack(side=tk.LEFT)
     ent.pack(side=tk.RIGHT, expand=tk.YES, fill=tk.X)
-    entries.append(ent)
+    entries.append((btn_name + "time",ent))
     btn_entries_name_to_time[btn_name] = ent
 
 def makeform(root, fields):
@@ -111,5 +117,7 @@ btn_ent.pack(side=tk.RIGHT)
 
 entries.append(row)
 makeform(root, fields)
+root.title("Zoom Recorder")
+root.iconbitmap(r'videocamera.ico')
 root.bind('<Return>')
 root.mainloop()
